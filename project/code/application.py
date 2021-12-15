@@ -14,6 +14,15 @@ def main(arguments):
     # Adding a key-value pair to the storage.
     key = "info8002"
     value = "fun"
+    
+    #TEST
+    blockchain = storage._blockchain
+    blockchain.add_transaction("coucou")
+    blockchain.add_transaction("laforme?")
+    blockchain.mine()
+    print(blockchain._blocks[1].transactions)
+    #TEST_end
+    
     callback = storage.put(key, value, block=False)
 
     # Depending on how fast your blockchain is,

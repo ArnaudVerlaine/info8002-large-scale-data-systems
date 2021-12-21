@@ -1,11 +1,14 @@
 """
 User-level application (stub).
 
+"""
+User-level application (stub).
 NB: Feel free to extend or modify.
 """
 
 import argparse
 from keychain import Storage
+from time import sleep
 
 
 def main(arguments):
@@ -14,31 +17,29 @@ def main(arguments):
     # Adding a key-value pair to the storage.
     key = "info8002"
     value = "fun"
-    
-    #TEST
-    blockchain = storage._blockchain
-    blockchain.add_transaction("coucou")
-    blockchain.add_transaction("laforme?")
-    blockchain.mine()
-    print(blockchain._blocks[1].transactions)
-    #TEST_end
-    
-    callback = storage.put(key, value, block=False)
+    sleep(3)
+    storage.put(key, value, block=False)
+
+    sleep(1)
+
+    #print(storage.get_chain())
+
+    #callback = storage.put(key, value, block=False)
 
     # Depending on how fast your blockchain is,
     # this will return a proper result.
-    print(storage.retrieve(key))
+    #print(storage.retrieve(key))
 
     # Using the callback object,
     # you can also wait for the operation to be completed.
-    callback.wait()
+    #callback.wait()
 
     # Now the key should be available,
     # unless a different node `put` a new value.
-    print(storage.retrieve(key))
+    #print(storage.retrieve(key))
 
     # Show all values of the key.
-    print(storage.retrieve_all(key))
+    #print(storage.retrieve_all(key))
 
 
 def allocate_application(arguments):
@@ -70,3 +71,4 @@ def parse_arguments():
 if __name__ == "__main__":
     arguments = parse_arguments()
     main(arguments)
+

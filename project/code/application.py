@@ -13,14 +13,24 @@ from time import sleep
 
 def main(arguments):
     storage = allocate_application(arguments)
+    response = None
+    while response not in ["1", "2", "3","4"]:
+        response = input("""What do you want to do?
+        1. PUT
+        2. RETRIEVE
+        3. RETRIEVE ALL
+        4. Quit\n""")
+    if response == "1":
+        key = input("Key: introduce the key\n")
+        value = input("Value: introduce the value\n")
+        storage.put(key, value, block=False)
+        #print(storage.get_chain())
 
     # Adding a key-value pair to the storage.
     key = "info8002"
     value = "fun"
-    sleep(3)
-    storage.put(key, value, block=False)
-
-    sleep(1)
+    
+    sleep(10)   
 
     #print(storage.get_chain())
 

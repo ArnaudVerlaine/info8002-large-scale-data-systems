@@ -1,12 +1,11 @@
 """
 KeyChain key-value store (stub).
-
 NB: Feel free to extend or modify.
 """
-
-from keychain import Blockchain
 from keychain import Transaction
-
+import subprocess
+from requests import get
+import json
 
 class Callback:
     def __init__(self, transaction, chain):
@@ -28,27 +27,33 @@ class Storage:
         your blockchain. Depending whether or not the miner flag has
         been specified, you should allocate the mining process.
         """
-        self._blockchain = Blockchain()
-        raise NotImplementedError
+
+        self.myAdd = '127.0.0.1:5000'
+        self.bootstrap = bootstrap
+        #self._blockchain = Blockchain(bootstrap, difficulty)
+        #hello = subprocess.Popen(["python" ,"blockchain_app.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty)])
+        hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
+
+
+         #check 200
+         # copie chaine au bootstrap
 
     def put(self, key, value, block=True):
         """Puts the specified key and value on the Blockchain.
-
         The block flag indicates whether the call should block until the value
         has been put onto the blockchain, or if an error occurred.
         """
-        raise NotImplementedError
-        transaction = Transaction(...)
-        self._blockchain.add_transaction(self, transaction)
-        callback = Callback(transaction, self._blockchain)
+        transaction = Transaction(key, value, 'origin')
+        self.broadcast(self.bootstrap, transaction)
+
+        #callback = Callback(transaction, self._blockchain)
         if block:
             callback.wait()
 
-        return callback
+        #return callback
 
     def retrieve(self, key):
         """Searches the most recent value of the specified key.
-
         -> Search the list of blocks in reverse order for the specified key,
         or implement some indexing schemes if you would like to do something
         more efficient.
@@ -60,3 +65,20 @@ class Storage:
         complete blockchain.
         """
         raise NotImplementedError
+
+    def get_chain(self):
+        url = "http://" + str(self.myAdd) + "/blockchain"
+        result = get(url)
+        return result.json()['chain']
+
+    def broadcast(self, bootstrap, transaction):
+        url = "http://" + str(bootstrap) + "/getPeers"
+        print('cccccccccccccccccccccccccccccccccccccccccccccccccccccc')
+        peers = get(url).json()['peers']
+        print(peers)
+        print('cccccccccccccccccccccccccccccccccccccccccccccccccccccc')
+        #check if 200
+        for peer in peers:
+            url = "http://" + str(peer) + "/broadcast"
+            result = get(url, data = json.dumps({"k": transaction.key, "v" : transaction.value, "o": transaction.origin}))
+            #check if 200

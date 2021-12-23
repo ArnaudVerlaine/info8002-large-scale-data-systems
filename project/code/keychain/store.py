@@ -6,6 +6,7 @@ from keychain import Transaction
 import subprocess
 from requests import get
 import json
+import time
 
 class Callback:
     def __init__(self, transaction, chain):
@@ -14,11 +15,12 @@ class Callback:
 
     def wait(self):
         """Wait until the transaction appears in the blockchain."""
-        raise NotImplementedError
+        while not self._chain.contains(self._transaction):
+            time.sleep(2.5) # y a sûrement moyen de faire plus propre
 
     def completed(self):
         """Polls the blockchain to check if the data is available."""
-        raise NotImplementedError
+        return self._chain.contains(self._transaction)
 
 
 class Storage:
@@ -35,8 +37,8 @@ class Storage:
         hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
 
 
-         #check 200
-         # copie chaine au bootstrap
+        #check 200
+        # copie chaine au bootstrap
 
     def put(self, key, value, block=True):
         """Puts the specified key and value on the Blockchain.
@@ -48,7 +50,8 @@ class Storage:
 
         #callback = Callback(transaction, self._blockchain)
         if block:
-            callback.wait()
+            print("put")
+            #callback.wait()
 
         #return callback
 
@@ -73,10 +76,7 @@ class Storage:
 
     def broadcast(self, bootstrap, transaction):
         url = "http://" + str(bootstrap) + "/getPeers"
-        print('cccccccccccccccccccccccccccccccccccccccccccccccccccccc')
         peers = get(url).json()['peers']
-        print(peers)
-        print('cccccccccccccccccccccccccccccccccccccccccccccccccccccc')
         #check if 200
         for peer in peers:
             url = "http://" + str(peer) + "/broadcast"

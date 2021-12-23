@@ -1,8 +1,5 @@
 """
 User-level application (stub).
-
-"""
-User-level application (stub).
 NB: Feel free to extend or modify.
 """
 
@@ -20,11 +17,22 @@ def main(arguments):
         2. RETRIEVE
         3. RETRIEVE ALL
         4. Quit\n""")
+
     if response == "1":
         key = input("Key: introduce the key\n")
         value = input("Value: introduce the value\n")
         storage.put(key, value, block=False)
         #print(storage.get_chain())
+    elif response == "2":
+        key = input("Key: introduce the key to fetch")
+        result = storage.retrieve(key)
+        print(result)
+    elif response == "3":
+        key = input("Key: introduce the key to fetch")
+        result = storage.retrieve_all(key)
+        print(result)
+    elif response == "4":
+        print("Quitting...")
 
     # Adding a key-value pair to the storage.
     key = "info8002"
@@ -72,7 +80,7 @@ def parse_arguments():
                         help="Sets the address of the bootstrap node.")
     parser.add_argument("--difficulty", type=int, default=5,
                         help="Sets the difficulty of Proof of Work, only has "
-                             "an effect with the `--miner` flag has been set.")
+                            "an effect with the `--miner` flag has been set.")
     arguments, _ = parser.parse_known_args()
 
     return arguments

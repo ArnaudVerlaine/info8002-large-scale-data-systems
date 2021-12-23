@@ -130,7 +130,7 @@ def check_chain_validity(chain):
 
     return result
 
-def consensus(blockchain):
+def consensus(blockchain): # Used when a miner 
     BLOCKCHAIN = blockchain
     curr_len = len(blockchain)
     longest_chain = None
@@ -148,7 +148,24 @@ def consensus(blockchain):
         return BLOCKCHAIN
     return False
 
+# We get the blockchain of every node and we take the longest valid one
+def consensus_new_peer(peers):
+    PEERS = peers
+    curr_len = len(peers)
+    longest_chain = None
 
+    for node in PEERS:
+        response = get("http://" + str(node._address) +"/blockchain")
+        length = response.json()["length"]
+        chain = reconstruct_chain(response.json()["chain"])
+        if length > curr_len and check_chain_validity(chain):
+            curr_len = length
+            longest_chain = chain
+
+    if longest_chain:
+        PEERS = longest_chain
+        return PEERS
+    return False
 
 def add_transaction(transaction):
     global PENDING_TRANS
@@ -177,7 +194,6 @@ def mine(a, blockchain, pending_trans):
         a.send(BLOCKCHAIN)
         get(url = 'http://' + str(MY_ADD) +  '/chainUpdated')
 
-
 def is_valid_proof(block, block_hash):
     return (block_hash.startswith('0' * DIFF) and
             block_hash == block.compute_hash())
@@ -195,7 +211,6 @@ def add_block(blockchain, block, proof):
 def get_blocks(self):
     return self._blocks
 
-
 app = Flask(__name__)
 
 @app.route('/broadcast')
@@ -204,15 +219,12 @@ def broadcast():
     transaction = Transaction(msg["k"], msg["v"], msg["o"])
     add_transaction(transaction)
     b.send(PENDING_TRANS)
-    print(msg)
     return json.dumps({"deliver": True})
 
 @app.route("/blockchain")
 def get_chain():
     chain_data = []
     global BLOCKCHAIN
-    print('aaaaaaaaaaaaaaaaaaaaaaa')
-    print(BLOCKCHAIN[0].__dict__)
     BLOCKCHAIN = b.recv
     # Returns the blockchain and its length
     for block in BLOCKCHAIN:
@@ -225,6 +237,12 @@ def get_chain():
 def get_chain_updated():
     global BLOCKCHAIN
     BLOCKCHAIN = b.recv
+    return
+
+@app.route("/peersUpdated")
+def get_peers_updated():
+    global PEERS
+    PEERS = b.recv
     return
 
 @app.route("/getMiners")
@@ -248,13 +266,18 @@ def enterSyst():
     PEERS.append(newPeer)
     if request.get_json(force=True)["miner"]:
         MINERS.append(newPeer)
-    return json.dumps({"msg" : 'Welcome Djo ! From Bootstrap\n'})
+    
+    # When a new node enters the system, we send the update to every other node.
+    for peer in PEERS:
+        url = "http://" + str(peer) + "/peersUpdated"
+        result = get(url, data = json.dumps(PEERS))
+    return
 
 
 def welcome_msg():
     print("""       =========================================\n
         BLOCKCHAIN by Guillaume and Laurie\n
-       =========================================\n\n """)
+        =========================================\n\n """)
 
 def bootstrap():
     """Implements the bootstrapping procedure."""
@@ -267,9 +290,10 @@ def bootstrap():
         url = 'http://' + str(arguments.bootstrap) + '/Hi!'
         res = get(url, data = json.dumps({"add": arguments.myAdd, "miner" : arguments.miner}))
         print(res.json()['msg'])
-        url = 'http://' + str(arguments.bootstrap) + '/blockchain'
-        response = get(url)
-        BLOCKCHAIN = reconstruct_chain(response.json()["chain"])
+        BLOCKCHAIN = consensus_new_peer([]) # When a new peer arrives, it does a consensus with the other peers
+        #url = 'http://' + str(arguments.bootstrap) + '/blockchain'
+        #response = get(url)
+        #BLOCKCHAIN = reconstruct_chain(response.json()["chain"])
 
 
 

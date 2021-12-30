@@ -17,7 +17,8 @@ def main(arguments):
         1. PUT
         2. RETRIEVE
         3. RETRIEVE ALL
-        4. Quit\n""")
+        4. Quit
+        5. Throughput testing\n""")
 
         if response == "1":
             key = input("Key: introduce the key\n")

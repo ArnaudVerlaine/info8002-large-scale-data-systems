@@ -30,12 +30,19 @@ class Storage:
         been specified, you should allocate the mining process.
         """
 
-        self.myAdd = '127.0.0.1:5000'
+        self.myAdd = '192.168.0.13:8080'
         self.bootstrap = bootstrap
+        self.difficulty = difficulty
+        print('---------------------------------------------')
+        print(str(miner))
+        if miner:
+            miner_arg = '--miner'
+        else:
+            miner_arg = ''
         #self._blockchain = Blockchain(bootstrap, difficulty)
         #hello = subprocess.Popen(["python" ,"blockchain_app.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty)])
-        hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
-
+        hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), miner_arg,  "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
+        self.sub = hello
 
         #check 200
         # copie chaine au bootstrap
@@ -45,7 +52,7 @@ class Storage:
         The block flag indicates whether the call should block until the value
         has been put onto the blockchain, or if an error occurred.
         """
-        transaction = Transaction(key, value, 'origin')
+        transaction = Transaction(key, value, self.myAdd)
         self.broadcast(self.bootstrap, transaction)
 
         #callback = Callback(transaction, self._blockchain)
@@ -61,13 +68,17 @@ class Storage:
         or implement some indexing schemes if you would like to do something
         more efficient.
         """
-        raise NotImplementedError
+        url = 'http://' + str(self.myAdd) + '/retrieve'
+        res = get(url, data = json.dumps({"difficulty": self.difficulty, "bootstrap": self.bootstrap, "key" : key}))
+        return res.json()["value"]
 
     def retrieve_all(self, key):
         """Retrieves all values associated with the specified key on the
         complete blockchain.
         """
-        raise NotImplementedError
+        url = 'http://' + str(self.myAdd) + '/retrieve_all'
+        res = get(url, data = json.dumps({"difficulty": self.difficulty, "bootstrap": self.bootstrap, "key" : key}))
+        return res.json()["values"]
 
     def get_chain(self):
         url = "http://" + str(self.myAdd) + "/blockchain"
@@ -82,3 +93,6 @@ class Storage:
             url = "http://" + str(peer) + "/broadcast"
             result = get(url, data = json.dumps({"k": transaction.key, "v" : transaction.value, "o": transaction.origin}))
             #check if 200
+    def kill(self):
+        self.sub.kill()
+

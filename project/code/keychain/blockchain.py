@@ -136,7 +136,7 @@ def check_chain_validity(chain, diff):
 
     return result
 
-def consensus(blockchain, diff, bootstrap): # Used when a miner
+def consensus(blockchain, diff, bootstrap):
     BLOCKCHAIN = blockchain
     curr_len = len(blockchain)
     print('-------------------------len : ' + str(len(blockchain)))

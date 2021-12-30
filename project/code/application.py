@@ -6,6 +6,7 @@ NB: Feel free to extend or modify.
 import argparse
 from keychain import Storage
 from time import sleep
+import matplotlib.pyplot as plt
 
 
 def main(arguments):
@@ -35,6 +36,23 @@ def main(arguments):
             print("Quitting...")
             storage.kill()
             break
+        elif response == "5":
+            n_transactions = []
+            for _ in range(200):
+                storage.put("key", "value")
+                chain = storage.get_chain()
+                n = 0
+                for block in chain:
+                    n = n + len(block.transactions())
+                n_transactions.append(n)
+                sleep(1)
+            plt.figure()
+            plt.plot(range(200), n_transactions)
+            plt.xlabel("Time (s)")
+            plt.ylabel("Number of transactions")
+            plt.title("Difficulty level of "+str(storage.difficulty))
+            plt.savefig("difficulty"+str(storage.difficulty)+".svg")
+
 
     # Adding a key-value pair to the storage.
 

@@ -76,7 +76,6 @@ class Transaction:
 
 def create_genesis_block():
     genesis_block = Block(0, [], time.time(), "0")
-    #genesis_block.hash = genesis_block.compute_hash()
     return genesis_block
 
 def proof_of_work(blockchain, block, diff, bootstrap):
@@ -123,34 +122,22 @@ def check_chain_validity(chain, diff):
     blocks correct?
     """
     result = True
-    #previous_hash = chain[0].compute_hash()
     for i in range(1,len(chain)-1): #start at 1 because previous hash of the block 1 not '0' * DIFF
 
-        #block_hash = block.hash
-        # Removes the hash attribute to recompute the hash again using compute_hash.
-        #delattr(block, "hash")
-        if not is_valid_proof(chain[i], chain[i+1].previous_hash, diff):# or previous_hash != block.previous_hash:
+        if not is_valid_proof(chain[i], chain[i+1].previous_hash, diff):
             result = False
             break
-
-        #previous_hash  = block.previous_hash
-        #block.hash = block_hash
-        #previous_hash = block_hash
-
     return result
 
 def consensus(blockchain, diff, bootstrap):
     BLOCKCHAIN = blockchain
     curr_len = len(blockchain)
-    print('-------------------------len : ' + str(len(blockchain)))
     longest_chain = None
     url = "http://" + str(bootstrap) + "/getMiners"
     MINERS = get(url).json()['miners']
-    print('MINERS-----------------------------' + str(MINERS))
     for node in MINERS:
         response = get("http://" + str(node) +"/blockchain")
         length = response.json()["length"]
-        print('-------------------------len : ' + str(length))
         chain = reconstruct_chain(response.json()["chain"])
         if length > curr_len and check_chain_validity(chain, diff):
             curr_len = length
@@ -163,7 +150,6 @@ def consensus(blockchain, diff, bootstrap):
 
 # We get the blockchain of every node and we take the longest valid one
 def consensus_new_peer(peers, difficulty):
-    #curr_len = len(peers)
     curr_len = 0
     longest_chain = None
 
@@ -240,7 +226,6 @@ def mine(blockchain, pending_trans, myAdresse, diff, bootstrap, malicious):
             continue
 
         last = BLOCKCHAIN[-1]
-        print(last.compute_hash())
 
         new_block = Block(index=last.index + 1,
                             transactions=PENDING_TRANS,
@@ -268,14 +253,12 @@ def heartbeat(myAdd, bootstrap):
         peers = get(url).json()['peers']
 
         for i, peer in enumerate(peers):
-            print('----------------heartbeat' + str(peer))
             url = 'http://' + str(peer) + '/ping'
             try:
                 res = get(url, timeout = 5)
             except:
                 res = None
             if not res or res.status_code != 200:
-                print
                 if i in count:
                     count[i] += 1
                 else:
@@ -331,18 +314,14 @@ def broadcast():
         rebroad = True
     transaction = Transaction(msg["k"], msg["v"], msg["o"])
     add_transaction(transaction, rebroad)
-    #b.send(PENDING_TRANS)
     return json.dumps({"deliver": True})
 
 @app.route("/blockchain")
 def get_chain():
     chain_data = []
     global BLOCKCHAIN
-    print('BBBBBB' + str(BLOCKCHAIN))
-    #BLOCKCHAIN = b.recv
     # Returns the blockchain and its length
     for block in BLOCKCHAIN:
-        print('OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO')
         dic = (block.__dict__).copy()
         dic['transactions'] = [a.__dict__ for a in block.transactions]
         chain_data.append(json.dumps(dic))
@@ -361,7 +340,6 @@ def get_peers_updated():
     global PEERS
     newPeer = request.get_json(force=True)["peer"]
     PEERS.append(newPeer)
-    #PEERS = b.recv
     return ('peersUpdated ok')
 
 @app.route("/minersUpdated")
@@ -369,7 +347,6 @@ def get_miners_updated():
     global MINERS
     newMiner = request.get_json(force=True)["miner"]
     MINERS.append(newMiner)
-    #PEERS = b.recv
     return ('minersUpdated ok')
 
 @app.route("/getMiners")
@@ -395,7 +372,6 @@ def testGet():
 @app.route("/retrieve")
 def retrieve():
     global BLOCKCHAIN
-    print(BLOCKCHAIN)
     difficulty = request.get_json(force=True)["difficulty"]
     bootstrap = request.get_json(force=True)["bootstrap"]
     key = request.get_json(force=True)["key"]
@@ -438,22 +414,12 @@ def enterSyst():
             result = get(url, data = json.dumps({"miner": newPeer}))
         MINERS.append(newPeer)
 
-
-    #if request.get_json(force=True)["miner"]:
-    #    MINERS.append(newPeer)
-
     # When a new node enters the system, we send the update to every other node.
     for peer in PEERS[1:]: #all except bootstrap & new peer
         url = "http://" + str(peer) + "/peersUpdated"
         result = get(url, data = json.dumps({"peer": newPeer}))
     PEERS.append(newPeer)
     return json.dumps({"peersList" : PEERS, "minersList" : MINERS})
-
-
-def welcome_msg():
-    print("""       =========================================\n
-        BLOCKCHAIN by Guillaume and Laurie \n
-        =========================================\n\n """)
 
 def bootstrap(diff):
     """Implements the bootstrapping procedure."""
@@ -466,15 +432,11 @@ def bootstrap(diff):
         if arguments.miner:
             MINERS.append(arguments.myAdd)
     else:
-        #url = 'http://' + str(arguments.bootstrap) + '/testGet'
         url = 'http://' + str(arguments.bootstrap) + '/Hi!'
         res = get(url, data = json.dumps({"add": arguments.myAdd, "miner" : arguments.miner}))
         PEERS = res.json()['peersList']
         MINERS = res.json()['minersList']
         BLOCKCHAIN = consensus_new_peer(PEERS, diff) # When a new peer arrives, it does a consensus with the other peers
-        #url = 'http://' + str(arguments.bootstrap) + '/blockchain'
-        #response = get(url)
-        #BLOCKCHAIN = reconstruct_chain(response.json()["chain"])
 
 
 if __name__ == '__main__':
@@ -488,19 +450,11 @@ if __name__ == '__main__':
     diff = arguments.difficulty
     mal = arguments.malicious
     bootstrap(diff)
-    welcome_msg()
 
-    # Start mining
-    #a, b = Pipe()
     p1 = Process(target=mine, args=(BLOCKCHAIN, PENDING_TRANS, MY_ADD, diff, arguments.bootstrap, mal))
     p3 = Process(target=heartbeat, args =(MY_ADD, arguments.bootstrap))
 
-    #p2.start()
     if arguments.miner:
         p1.start()
     p3.start()
     p2 = Process(target=app.run(host=MY_ADD.split(':')[0], port=MY_ADD.split(':')[1]))
-    # Start server to receive transactions
-
-#app.run(host='192.168.1.177', port=80)
-

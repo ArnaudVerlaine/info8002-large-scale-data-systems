@@ -221,7 +221,7 @@ def mine(blockchain, pending_trans, myAdresse, diff, bootstrap, malicious):
             else:
                 block = BLOCKCHAIN[index]
                 new_block = Block(index=block.index,
-                                    transactions=[],
+                                    transactions=block.transactions,
                                     timestamp=block.timestamp,
                                     previous_hash=corrupted_chain[index-1].compute_hash()) # Since the previous block changed, we need to recompute the hash
                 corrupted_chain = proof_of_work(corrupted_chain, new_block, diff, bootstrap)

@@ -22,6 +22,9 @@ def parse_arguments():
     parser.add_argument("--miner", type=bool, default=False, nargs='?',
                         const=True, help="Starts the mining procedure.")
 
+    parser.add_argument("--malicious", type=bool, default=False, nargs='?',
+                        const=True, help="Defines the node as malicious.")
+
     parser.add_argument("--difficulty", type=int, default=5,
                         help="XXXXXXX")
 
@@ -193,10 +196,40 @@ def add_transaction(transaction, rebroad):
 
 
 
-def mine(blockchain, pending_trans, myAdresse, diff, bootstrap):
+def mine(blockchain, pending_trans, myAdresse, diff, bootstrap, malicious):
     BLOCKCHAIN = blockchain
     PENDING_TRANS = pending_trans
     MY_ADD = myAdresse
+
+    if malicious:
+        time.sleep(30) # waits for the blockchain to be filled
+        BLOCKCHAIN = consensus(BLOCKCHAIN, diff, bootstrap)
+        block_to_modify = len(BLOCKCHAIN) - 3 # decides on a block to modify
+        corrupted_chain = []
+        index = 0
+
+        while index < len(BLOCKCHAIN): # when we exit the loop, it means that the malicious process has caught up to the miners
+            if index < block_to_modify: # we just copy the old blockchain as nothing has changed
+                corrupted_chain.append(BLOCKCHAIN[index])
+            elif index == block_to_modify: # We reach the block we want to modify
+                block = BLOCKCHAIN[index]
+                new_block = Block(index=block.index,
+                                    transactions=[],
+                                    timestamp=block.timestamp,
+                                    previous_hash=block.previous_hash)
+                corrupted_chain = proof_of_work(corrupted_chain, new_block, diff, bootstrap)
+            else:
+                block = BLOCKCHAIN[index]
+                new_block = Block(index=block.index,
+                                    transactions=[],
+                                    timestamp=block.timestamp,
+                                    previous_hash=corrupted_chain[index-1].compute_hash()) # Since the previous block changed, we need to recompute the hash
+                corrupted_chain = proof_of_work(corrupted_chain, new_block, diff, bootstrap)
+            index = index + 1
+            BLOCKCHAIN = consensus(BLOCKCHAIN, diff, bootstrap) # we get the latest chain
+
+        # Then, the malicious process becomes a regular miner and since it mines faster than the other miners, the corrupted chain will become the longest valid one
+        BLOCKCHAIN = corrupted_chain
 
     while True:
         res = get(url = 'http://' + str(MY_ADD) +  '/txion').json()['pending']
@@ -453,12 +486,13 @@ if __name__ == '__main__':
     DEAD_PEERS = []
     MY_ADD = arguments.myAdd
     diff = arguments.difficulty
+    mal = arguments.malicious
     bootstrap(diff)
     welcome_msg()
 
     # Start mining
     #a, b = Pipe()
-    p1 = Process(target=mine, args=(BLOCKCHAIN, PENDING_TRANS, MY_ADD, diff, arguments.bootstrap))
+    p1 = Process(target=mine, args=(BLOCKCHAIN, PENDING_TRANS, MY_ADD, diff, arguments.bootstrap, mal))
     p3 = Process(target=heartbeat, args =(MY_ADD, arguments.bootstrap))
 
     #p2.start()

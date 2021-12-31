@@ -7,6 +7,7 @@ import subprocess
 from requests import get
 import json
 import time
+import socket
 
 class Callback:
     def __init__(self, transaction, chain):
@@ -24,24 +25,31 @@ class Callback:
 
 
 class Storage:
-    def __init__(self, bootstrap, miner, difficulty):
+    def __init__(self, bootstrap, miner, malicious, difficulty):
         """Allocate the backend storage of the high level API, i.e.,
         your blockchain. Depending whether or not the miner flag has
         been specified, you should allocate the mining process.
         """
 
-        self.myAdd = '192.168.0.13:8080'
+        ip = socket.gethostbyname(socket.gethostname())
+        self.myAdd = ip + ':8080'
+        self.myAdd = '127.0.0.1:8080'
         self.bootstrap = bootstrap
         self.difficulty = difficulty
+        self.malicious = malicious
         print('---------------------------------------------')
         print(str(miner))
         if miner:
             miner_arg = '--miner'
         else:
             miner_arg = ''
+        if malicious:
+            mal_arg = '--malicious'
+        else:
+            mal_arg = ''
         #self._blockchain = Blockchain(bootstrap, difficulty)
         #hello = subprocess.Popen(["python" ,"blockchain_app.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty)])
-        hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), miner_arg,  "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
+        hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), miner_arg, mal_arg, "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
         self.sub = hello
 
         #check 200

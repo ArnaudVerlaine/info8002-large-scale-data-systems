@@ -7,6 +7,7 @@ import argparse
 from keychain import Storage
 from time import sleep
 import matplotlib.pyplot as plt
+import json
 
 
 def main(arguments):
@@ -41,11 +42,8 @@ def main(arguments):
             n_transactions = []
             for _ in range(200):
                 storage.put("key", "value")
-                chain = storage.get_chain()
-                n = 0
-                for block in chain:
-                    n = n + len(block.transactions())
-                n_transactions.append(n)
+                chain = storage.retrieve_all("key")
+                n_transactions.append(len(chain))
                 sleep(1)
             plt.figure()
             plt.plot(range(200), n_transactions)
@@ -79,9 +77,10 @@ def main(arguments):
 
 def allocate_application(arguments):
     application = Storage(
-        bootstrap=arguments.bootstrap,
-        miner=arguments.miner,
-        difficulty=arguments.difficulty)
+            bootstrap=arguments.bootstrap,
+            miner=arguments.miner,
+            malicious=arguments.malicious,
+            difficulty=arguments.difficulty)
 
     return application
 
@@ -93,6 +92,8 @@ def parse_arguments():
 
     parser.add_argument("--miner", type=bool, default=False, nargs='?',
                         const=True, help="Starts the mining procedure.")
+    parser.add_argument("--malicious", type=bool, default=False, nargs='?',
+                        const=True, help="Defines the node as malicious.")
     parser.add_argument("--bootstrap", type=str, default=None,
                         help="Sets the address of the bootstrap node.")
     parser.add_argument("--difficulty", type=int, default=5,
@@ -106,5 +107,3 @@ def parse_arguments():
 if __name__ == "__main__":
     arguments = parse_arguments()
     main(arguments)
-
-

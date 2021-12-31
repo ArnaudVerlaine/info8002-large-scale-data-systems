@@ -33,7 +33,7 @@ class Storage:
 
         ip = socket.gethostbyname(socket.gethostname())
         self.myAdd = ip + ':8080'
-        self.myAdd = '127.0.0.1:8080'
+        #self.myAdd = '127.0.0.1:8080'
         self.bootstrap = bootstrap
         self.difficulty = difficulty
         self.malicious = malicious
@@ -47,13 +47,9 @@ class Storage:
             mal_arg = '--malicious'
         else:
             mal_arg = ''
-        #self._blockchain = Blockchain(bootstrap, difficulty)
-        #hello = subprocess.Popen(["python" ,"blockchain_app.py", "--bootstrap", str(bootstrap), "--miner", str(miner),  "--difficulty", str(difficulty)])
+
         hello = subprocess.Popen(["python" ,"keychain/blockchain.py", "--bootstrap", str(bootstrap), miner_arg, mal_arg, "--difficulty", str(difficulty), "--myAdd", str(self.myAdd)])
         self.sub = hello
-
-        #check 200
-        # copie chaine au bootstrap
 
     def put(self, key, value, block=True):
         """Puts the specified key and value on the Blockchain.
@@ -96,11 +92,10 @@ class Storage:
     def broadcast(self, bootstrap, transaction):
         url = "http://" + str(bootstrap) + "/getPeers"
         peers = get(url).json()['peers']
-        #check if 200
+
         for peer in peers:
             url = "http://" + str(peer) + "/broadcast"
             result = get(url, data = json.dumps({"k": transaction.key, "v" : transaction.value, "o": transaction.origin}))
-            #check if 200
+
     def kill(self):
         self.sub.kill()
-
